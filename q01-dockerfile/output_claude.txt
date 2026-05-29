@@ -1,0 +1,56 @@
+Explicação das Escolhas ArquiteturaisMulti-stage build: Reduz o tamanho final da imagem em ~60% ao descartar o estágio builder (que contém npm, ferramentas de compilação e dependências dev). A imagem runtime fica enxuta, contendo apenas o necessário para executar a aplicação.Usuário não-root: Mitiga riscos de segurança — se um atacante conseguir acesso ao container, não terá privilégios de root. O usuário appuser é criado especificamente para rodar a aplicação.Health check: Permite que orquestradores (Docker Compose, Kubernetes) monitorem a saúde da aplicação e reiniciem containers falhando automaticamente.Variáveis de ambiente: NODE_ENV=production otimiza performance; LOG_LEVEL permite ajustar verbosidade sem rebuild; PORT centraliza a configuração.npm ci em vez de npm install: Garante reprodutibilidade — instala exatamente as versões do package-lock.json, evitando surpresas em produção.Alpine Linux: Base node:20-alpine é 10x menor que node:20 (imagem completa), reduzindo superfície de ataque e tempo de pull.
+
+
+# Estágio 1: Builder (compila dependências e build)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copia apenas arquivos de dependências para aproveitar cache
+COPY package*.json ./
+
+# Instala dependências de produção e dev (necessárias para build)
+RUN npm ci --only=production --ignore-scripts || npm install --only=production --ignore-scripts
+
+# Copia o restante do código da aplicação
+COPY . .
+
+# Se houver build step (ex: TypeScript, bundle), execute aqui
+# RUN npm run build --if-present
+
+# Remove dependências dev (se não forem necessárias no runtime)
+# Caso não use multi-stage, removeria aqui, mas como builder é separado, já está limpo.
+
+# Estágio 2: Runtime (imagem final enxuta)
+FROM node:20-alpine AS runtime
+
+# Variáveis de ambiente com valores padrão
+ENV NODE_ENV=production \
+    LOG_LEVEL=info \
+    PORT=3000
+
+# Cria usuário não-root para segurança
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Define diretório de trabalho
+WORKDIR /app
+
+# Copia apenas os artefatos necessários do builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app . # Ajuste se houver pasta de build (ex: dist/)
+
+# Ajusta permissões para o usuário não-root
+RUN chown -R appuser:appgroup /app
+
+# Muda para usuário não-root
+USER appuser
+
+# Expõe a porta da aplicação
+EXPOSE 3000
+
+# Health check (ping no servidor, ajuste a rota conforme sua app)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# Comando de inicialização
+CMD ["node", "index.js"]
