@@ -1,19 +1,27 @@
-Before: Atualmente, o banco ledger_prod tem dados brutos de transações espalhados em múltiplas tabelas (transactions, accounts, users) sem agregação ou análise consolidada. Jennifer precisa manualmente compilar relatórios mensais, o que é demorado e propenso a erros.
+TASK:
+Escreva uma query SQL PostgreSQL que gere um relatório consolidado 
+de transações mensais do banco ledger_prod para os últimos 6 meses 
+corridos (período: 2025-10-24 até 2026-04-24).
 
-After: Um relatório SQL estruturado que:
-1. Agregue transações por tipo (débito, crédito, transferência, etc.)
-2. Calcule totais, médias, contagens e desvios padrão por categoria
-3. Identifique anomalias (transações > 2 desvios padrão, taxa de falha > 5%, etc.)
-4. Mostre top 10 usuários por volume de transações
-5. Exiba tendências diárias/semanais do mês
-6. Retorne resultados em formato estruturado (JSON ou tabelas SQL)
+ACTION:
+A query deve executar as seguintes ações:
+1. Conectar as tabelas transactions e customers
+2. Filtrar apenas transações com status = 'completed'
+3. Filtrar apenas as categorias em produção: subscription, one_time, refund, credit_adjustment
+4. Filtrar apenas o período dos últimos 6 meses corridos (2025-10-24 até 2026-04-24)
+5. Agrupar os dados por mês (formato YYYY-MM) e por categoria
+6. Calcular duas métricas por linha:
+   - Quantidade de transações (COUNT(*))
+   - Volume total em reais (SUM(amount_cents) / 100.00, com 2 casas decimais)
+7. Ordenar o resultado por mês crescente (ASC), depois por categoria crescente (ASC)
+8. Retornar as colunas: mes (YYYY-MM), categoria, quantidade_transacoes, volume_reais
 
-Bridge: Escreva uma query SQL (ou conjunto de queries) que:
-- Conecte transactions, accounts e users
-- Filtre pelo último mês completo (use CURRENT_DATE para calcular dinamicamente)
-- Agregue dados com GROUP BY por tipo de transação, categoria, usuário
-- Use window functions para calcular percentis e desvios padrão
-- Identifique outliers com CASE WHEN e cálculos estatísticos
-- Retorne múltiplas CTEs (Common Table Expressions) para cada seção do relatório
-- Inclua comentários explicando cada seção
-- Seja otimizado para performance (índices, EXPLAIN ANALYZE)
+GOAL:
+Produzir uma query SQL que:
+- Seja válida e executável no PostgreSQL sem erros
+- Use os índices existentes (idx_transactions_created_at, idx_transactions_status, idx_transactions_category)
+- Retorne resultados em formato estruturado e fácil de interpretar
+- Inclua comentários explicando cada seção da query
+- Seja otimizada para performance (use CTEs se necessário para clareza)
+- Valide que amount_cents está convertido corretamente para reais (dividir por 100)
+- Seja pronta para produção e segura

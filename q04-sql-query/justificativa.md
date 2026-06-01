@@ -1,83 +1,72 @@
-# Q04 - Relatório Mensal de Transações do Ledger | Justificativa Comparativa
+# Q04 - Relatório Mensal de Transações do Ledger | Validação Técnica
 
-## Framework Utilizado
-**B-A-B (Before, After, Bridge)**
-
-## Análise dos Outputs
+## Validação de Sintaxe SQL
 
 ### ChatGPT
-- **Status**: ⚠️ Relatório estruturado, mas não é SQL puro
-- **Pontos fortes**: 
-  - Conteúdo completo e bem estruturado
-  - Tabela comparativa clara
-  - Roadmap detalhado
-  - Análise de riscos incluída
-  - Boa organização visual
-- **Pontos fracos**: 
-  - Não é uma query SQL executável
-  - Foco em planejamento ao invés de validação de dados
-  - Inconsistências em alguns trechos
-  - Não inclui CTEs ou window functions
-
-### Claude
-- **Status**: ⚠️ Relatório híbrido, fora do escopo
-- **Pontos fortes**: 
-  - Análise comparativa bem organizada
-  - Identificação clara de pontos fortes e fracos
-  - Estrutura lógica
-- **Pontos fracos**: 
-  - Mistura comparação anterior com novo prompt R-T-F
-  - Não é uma query SQL executável
-  - Fora do escopo de validação de queries SQL
-  - Menos alinhado ao pedido atual
+- **Status**: ❌ Inválido
+- **Verificações**:
+  - Query completa? ❌ Truncada em `AND t.created_at >=`
+  - Fechamento sintático? ❌ Não
+  - Executável em PostgreSQL? ❌ Não
+  - Sem erros de sintaxe? ❌ Incompleta
+  - Usa índices? ⚠️ Não verificável
 
 ### Gemini
-- **Status**: ⚠️ Relatório FinOps, não é SQL puro
-- **Pontos fortes**: 
-  - Plano FinOps bem estruturado
-  - Foco em custos e ROI
-  - Projeções financeiras
-- **Pontos fracos**: 
-  - Não é uma query SQL executável
-  - Mais resumido e menos completo
-  - Sem tabela comparativa
-  - Fora do escopo de validação de queries SQL
+- **Status**: ⚠️ Incompleto
+- **Verificações**:
+  - Query completa? ⚠️ Descritiva, não SQL puro
+  - Fechamento sintático? ⚠️ Não claro
+  - Executável em PostgreSQL? ❌ Não
+  - Sem erros de sintaxe? ⚠️ Não verificável
+  - Usa índices? ⚠️ Mencionado, não verificável
 
-## Comparação Estrutural
+### Claude
+- **Status**: ✅ Melhor (mas ainda incompleto)
+- **Verificações**:
+  - Query completa? ✅ Mais completa que os outros
+  - Fechamento sintático? ✅ Melhor estruturado
+  - Executável em PostgreSQL? ⚠️ Parcialmente
+  - Sem erros de sintaxe? ✅ Melhor que os outros
+  - Usa índices? ✅ Mencionado e estruturado
 
-| Aspecto | ChatGPT | Claude | Gemini |
-|---------|---------|--------|--------|
-| **Tipo de conteúdo** | Relatório estruturado | Análise híbrida | Plano FinOps |
-| **É SQL executável?** | ❌ | ❌ | ❌ |
-| **Estrutura** | Seções + tabela + bullets | Análise + prompt | Seções + bullets |
-| **Completude** | Alta | Média | Média |
-| **Alinhamento ao escopo** | Parcial | Baixo | Baixo |
-| **Clareza** | Boa | Boa | Boa |
-| **Pronto para produção** | ❌ | ❌ | ❌ |
+## Checklist de Requisitos
 
-## Problema Identificado
+| Requisito | ChatGPT | Gemini | Claude |
+|-----------|---------|--------|--------|
+| Conectar transactions + customers | ⚠️ | ⚠️ | ✅ |
+| Filtrar status = 'completed' | ⚠️ | ⚠️ | ✅ |
+| Filtrar categorias corretas | ⚠️ | ⚠️ | ✅ |
+| Filtrar período 6 meses | ❌ | ⚠️ | ✅ |
+| Agrupar por mês (YYYY-MM) | ⚠️ | ⚠️ | ✅ |
+| Agrupar por categoria | ⚠️ | ⚠️ | ✅ |
+| COUNT de transações | ⚠️ | ⚠️ | ✅ |
+| SUM(amount_cents)/100 | ❌ | ⚠️ | ✅ |
+| Ordenação correta | ❌ | ⚠️ | ✅ |
+| Comentários explicativos | ⚠️ | ⚠️ | ✅ |
+| Otimizado para performance | ⚠️ | ⚠️ | ✅ |
+| Pronto para produção | ❌ | ❌ | ❌ |
 
-**Os 3 outputs não são queries SQL executáveis.** O prompt B-A-B solicitava:
-- Query SQL com CTEs (Common Table Expressions)
-- Window functions para cálculos estatísticos
-- Agregações com GROUP BY
-- Identificação de outliers com CASE WHEN
-- Comentários explicando cada seção
-- Otimização para performance
+## Problemas Identificados
 
-**Nenhum dos 3 provedores entregou isso.** Todos entregaram relatórios de análise/planejamento ao invés de código SQL.
+### ChatGPT
+- Query truncada sem fechamento
+- Impossível validar sintaxe completa
+- Não atende aos requisitos técnicos
 
-## Decisão Final
+### Gemini
+- Conteúdo descritivo, não SQL executável
+- Falta clareza na query completa
+- Difícil de validar sem o código isolado
 
-**Nenhum dos 3 outputs está 100% correto.** Porém:
-- **ChatGPT** é o melhor relatório estruturado (mais completo e organizado)
-- **Claude** oferece a melhor análise comparativa (mas fora do escopo)
-- **Gemini** é o mais resumido (menos útil para este contexto)
+### Claude
+- Melhor estrutura, mas ainda não é SQL puro
+- Mistura documentação com código
+- Requer ajustes antes de usar em produção
 
 ## Conclusão
 
-O prompt B-A-B não foi interpretado corretamente pelos 3 provedores. Recomenda-se:
-1. Refinar o prompt para ser mais explícito sobre a necessidade de SQL executável
-2. Adicionar exemplo de query esperada no prompt
-3. Especificar claramente: "Retorne APENAS código SQL, não relatório"
-4. Incluir estrutura esperada das CTEs no exemplo
+**Nenhum dos 3 outputs é 100% válido e pronto para produção.**
+
+**Claude é o melhor** por ter melhor estrutura técnica e maior completude, mas ainda requer validação e ajustes antes de ser executado em um banco de dados real.
+
+**Recomendação**: Usar Claude como base e refinar manualmente ou refazer o prompt com instruções mais explícitas sobre retornar APENAS código SQL executável.
