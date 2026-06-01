@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chronos-system
+---
+# Secret - Credenciais externalizadas (não armazenadas em plaintext no Deployment)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chronos-secret
+  namespace: chronos-system
+type: Opaque
+stringData:
+  DB_PASSWORD: "Sup3rS3cr3t!"   # Substituir por valor real codificado em base64 ou usar External Secrets / Vault
+  JWT_SECRET: "jwt-secret-key-here"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chronos-api
+  namespace: chronos-system
+  labels:
+    app: chronos
+    component: api
+    env: production
+  annotations:
+    kubernetes.io/description: "Chronos API - Serviço de agendamento"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  replicas: 3                      # Alta disponibilidade - mínimo 3 réplicas
+  selector:
+    matchLabels:
+      app: chronos
+      component: api
+  template:
+    metadata:
+      labels:
+        app: chronos
+        component: api
+        env: production
+      annotations:
+        app.kubernetes.io/name: chronos-api
+        app.kubernetes.io/version: "v1.2.3"
+    spec:
+      securityContext:             # Segurança: não rodar como root
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: chronos-api
+          image: chronos-api:v1.2.3   # Imagem versionada - nunca usar "latest"
+          imagePullPolicy: IfNotPresent
+          env:
+            # Variáveis referenciando Secrets (não valores literais)
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chronos-secret
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chronos-secret
+                  key: JWT_SECRET
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:              # Recursos mínimos garantidos
+              cpu: "250m"
+              memory: "256Mi"
+            limits:                # Recursos máximos (tetos)
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:           # Health check - reinicia container se falhar
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:          # Health check - tráfego só após sucesso
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+---
+# Service - LoadBalancer para ambientes cloud; ClusterIP se interno
+apiVersion: v1
+kind: Service
+metadata:
+  name: chronos-api-service
+  namespace: chronos-system
+  labels:
+    app: chronos
+    component: api
+spec:
+  type: LoadBalancer   # Trocar para ClusterIP se não necessitar de balanceador externo
+  selector:
+    app: chronos
+    component: api
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+---
+# Aplicar com:
+# kubectl apply -f chronos-manifest.yaml
