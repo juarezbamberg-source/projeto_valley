@@ -1,4 +1,4 @@
-#Instalar dependências:
+#Instalar dependências (Necessário somente para primeira execução do script):
 sudo apt-get update && sudo apt-get install -y postgresql-client awscli jq
 
 #Criar usuário e diretório de logs:
