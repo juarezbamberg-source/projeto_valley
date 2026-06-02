@@ -53,5 +53,3 @@ Q08	Postmortem de Incidente	T-A-G	DeepSeek-V3
 8. Conclusão e Lições Aprendidas
 A conclusão deste projeto reforça que a Engenharia de Prompts não é apenas sobre "escrever instruções", mas sobre projetar contextos que reduzam a entropia das respostas da IA. O uso de frameworks como T-A-G e R-I-S-E provou ser essencial para obter respostas técnicas que não necessitem de refatoração humana extensiva.
 Além disso, a descoberta sobre o bairrismo das IAs serve como um alerta para arquiteturas de software que utilizam IA para validar IA. Para garantir a qualidade em escala, é recomendável o uso de modelos distintos para geração e avaliação, ou a implementação de critérios de validação programáticos (testes unitários, linters) que complementem o julgamento do LLM.
-
-Documento elaborado em 02 de junho de 2026. As informações contidas são de responsabilidade do solicitante.
