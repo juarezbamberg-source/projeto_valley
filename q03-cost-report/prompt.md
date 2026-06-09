@@ -1,46 +1,49 @@
-# Q03 - Relatório de Redução de Custos Cloud | Prompt C-A-R-E
+# Q03 - Relatório de Redução de Custos Cloud | Prompt T-A-G
 
-## Framework Utilizado
-**C-A-R-E (Context, Action, Result, Example)**
+Aja como um consultor sênior de FinOps e arquitetura cloud, com foco em redução de custos AWS sem degradar SLA.
 
-## Prompt Estruturado
+Tarefa:
+A partir do CSV real de custos abaixo, produza um relatório executivo em português para a diretoria, alinhado à meta de 15% de redução no custo cloud até o fim do próximo trimestre, sem degradar SLA.
 
-### Context
-Você é um analista de custos cloud sênior trabalhando para a Hill Valley Tech. A empresa precisa reduzir custos AWS em 30% nos próximos 6 meses. Os custos atuais são: EC2 $15k/mês, RDS $8k/mês, S3 $3k/mês, Lambda $2k/mês, outros $0.5k/mês (total: ~$28.5k/mês). O objetivo é chegar a ~$19.95k/mês.
+Use o framework T-A-G da seguinte forma:
+1. Tarefa: identificar oportunidades de economia
+2. Análise: interpretar o CSV, estimar impacto financeiro e priorizar iniciativas
+3. Geração: redigir o relatório com recomendações acionáveis
 
-### Action
-Crie um relatório executivo de redução de custos cloud que:
-1. Analise os custos atuais por serviço
-2. Identifique 5-7 oportunidades de redução (reserved instances, spot instances, rightsizing, storage optimization, etc.)
-3. Calcule o impacto financeiro de cada otimização (economia mensal e anual)
-4. Apresente um roadmap de implementação com timeline (meses 1-6)
-5. Mostre o ROI esperado e o custo total de implementação
-6. Inclua riscos e mitigações para cada recomendação
+Requisitos do relatório:
+1. Priorize as oportunidades de economia por maior impacto financeiro.
+2. Para cada oportunidade, informe obrigatoriamente:
+   - descrição da ação
+   - estimativa de economia mensal em USD
+   - percentual que a economia representa sobre a conta total
+   - esforço de implementação: baixo, médio ou alto
+   - riscos, trade-offs e pré-requisitos
+3. Inclua uma conclusão indicando quais medidas, combinadas, podem atingir ou se aproximar da meta de 15%.
+4. Não crie dados fictícios: use apenas os valores do CSV e inferências razoáveis baseadas neles.
+5. Preserve o SLA como restrição obrigatória: qualquer recomendação deve considerar risco operacional, disponibilidade e desempenho.
+6. Se houver ambiguidades ou limitações nos dados, explicite-as de forma objetiva.
+7. Estruture a saída em seções claras, com foco executivo e linguagem direta.
 
-### Result
-Retorne um relatório estruturado com:
-- Resumo executivo (1 parágrafo)
-- Tabela de custos atuais por serviço
-- Tabela de oportunidades com: Serviço, Oportunidade, Economia Mensal, Economia Anual, Esforço (Baixo/Médio/Alto), Timeline
-- Gráfico de redução de custos (antes/depois)
-- Roadmap de implementação (meses 1-6)
-- Análise de riscos
-- Conclusão com recomendação final
+CSV de custos:
+servico,categoria,custo_mensal_usd,uso_medio_pct,observacao
+EC2 reservada,compute,4200,72,contrato de 1 ano
+EC2 on-demand,compute,8200,45,workloads variaveis
+EKS,compute,6700,58,3 clusters
+RDS PostgreSQL,databases,8200,62,multi-AZ
+ElastiCache Redis,databases,2100,40,cluster de producao
+S3 Standard,storage,3100,,5 buckets principais
+EBS gp3,storage,1600,68,volumes de producao
+CloudWatch Logs,observability,2800,,retencao de 90 dias
+CloudWatch Metrics,observability,900,,
+Data Transfer Out,network,1900,,trafego entre regioes
+NAT Gateway,network,1200,,3 gateways ativos
+Lambda,compute,900,30,~12M invocacoes/mes
 
-### Example
-| Serviço | Oportunidade | Economia Mensal | Economia Anual | Esforço | Timeline |
-|---------|-------------|-----------------|-----------------|---------|----------|
-| EC2 | Reserved Instances (1 ano) | $3.000 | $36.000 | Baixo | Mês 1 |
-| EC2 | Spot Instances para dev/test | $1.500 | $18.000 | Médio | Mês 2 |
-| RDS | Reserved Instances (1 ano) | $1.600 | $19.200 | Baixo | Mês 1 |
-| S3 | Intelligent-Tiering | $600 | $7.200 | Baixo | Mês 1 |
-| Lambda | Otimização de memória | $300 | $3.600 | Médio | Mês 3 |
+Formato de saída:
+- Resumo executivo
+- Tabela de oportunidades priorizadas
+- Análise de risco e pré-requisitos
+- Recomendações para atingir a meta de 15%
+- Conclusão para a diretoria
 
-## Componentes do Framework
-
-| Componente | Descrição | Aplicação |
-|-----------|-----------|-----------|
-| **Context** | Cenário e background | Analista de custos, meta de 30% redução, custos atuais |
-| **Action** | Ações específicas a executar | 6 ações detalhadas (análise, identificação, cálculo, roadmap, ROI, riscos) |
-| **Result** | Formato e estrutura esperada | Relatório com 7 seções (resumo, tabelas, gráfico, roadmap, riscos, conclusão) |
-| **Example** | Exemplo concreto | Tabela com 5 oportunidades de redução |
+Se possível, apresente os valores com arredondamento simples e mantenha o texto pronto para apresentação à Goldie e à diretoria.

@@ -1,110 +1,109 @@
+# Relatório Executivo de Oportunidades de Redução de Custos AWS
+
 ## Resumo executivo
 
-A Hill Valley Tech pode atingir a meta de reduzir custos AWS em aproximadamente 30% em 6 meses com uma combinação de **otimização de capacidade, compromisso de uso, ajuste de arquitetura e eficiência de storage**.  
-Com base no gasto atual de cerca de **`$28.500/mês`**, a meta de **`$19.950/mês`** exige uma economia mensal de **`$8.550`**.  
-O caminho mais seguro é priorizar **EC2 e RDS**, que concentram mais de 80% do custo, e complementar com ganhos em **S3, Lambda e governança de consumo**.  
-A recomendação final é executar um programa em 3 frentes: **quick wins no mês 1**, **mudanças estruturais nos meses 2-4** e **validação contínua nos meses 5-6**.  
+Com base no CSV de custos fornecido, a conta mensal total é de aproximadamente **`USD 40.500`**, e a meta de redução de **15%** exige economia de cerca de **`USD 6.075/mês`**.  
+A análise mostra que a maior alavanca está em **EC2 on-demand**, seguida por **RDS PostgreSQL** e **CloudWatch Logs**.  
+Essas três frentes, combinadas, já chegam a uma economia estimada de **`USD 6.500/mês`**, o que ultrapassa a meta sem exigir mudanças estruturais de alto risco.  
+A recomendação executiva é priorizar ações de **baixo e médio esforço**, preservando SLA e evitando intervenções agressivas como consolidação de EKS ou alterações profundas de arquitetura no curto prazo.
 
-## Tabela de custos atuais por serviço
+---
 
-A visualização acima mostra a distribuição atual de custos por serviço.
+## Tabela de oportunidades priorizadas
 
-## Tabela de oportunidades de redução
+A priorização abaixo já está organizada por maior impacto financeiro e considera o peso de cada economia sobre a conta total.
 
-| Serviço | Oportunidade | Economia Mensal | Economia Anual | Esforço | Timeline |
-|---------|-------------|-----------------|-----------------|---------|----------|
-| EC2 | Reserved Instances/Savings Plans para workloads estáveis | `$3.000` | `$36.000` | Baixo | Mês 1 |
-| EC2 | Spot Instances para dev/test e batch | `$1.500` | `$18.000` | Médio | Mês 2 |
-| EC2 | Rightsizing de instâncias subutilizadas | `$1.200` | `$14.400` | Médio | Mês 2 |
-| RDS | Reserved Instances para bancos previsíveis | `$1.600` | `$19.200` | Baixo | Mês 1 |
-| RDS | Rightsizing e ajuste de storage/IOPS | `$800` | `$9.600` | Médio | Mês 3 |
-| S3 | Intelligent-Tiering + lifecycle policies | `$600` | `$7.200` | Baixo | Mês 1 |
-| Lambda | Otimização de memória e tempo de execução | `$300` | `$3.600` | Médio | Mês 3 |
+| Prioridade | Serviço | Ação | Economia Mensal (USD) | % da conta total | Esforço |
+|---|---|---|---:|---:|---|
+| 1 | EC2 on-demand | Converter parte dos workloads estáveis para reservas/Savings Plans e remover capacidade ociosa | 3.500 | 18,7% | Médio |
+| 2 | RDS PostgreSQL | Rightsizing e revisão de Multi-AZ/armazenamento/IOPS conforme uso real | 2.000 | 10,7% | Médio |
+| 3 | CloudWatch Logs | Reduzir retenção de 90 dias e aplicar filtros/lifecycle para logs menos críticos | 1.000 | 5,3% | Baixo |
+| 4 | EKS | Consolidar clusters e reduzir sobreposição entre 3 clusters | 900 | 4,8% | Alto |
+| 5 | NAT Gateway | Revisar tráfego de saída e rotas, reduzindo dependência de 3 gateways ativos | 600 | 3,2% | Médio |
+| 6 | ElastiCache Redis | Rightsizing/ajuste de nó e políticas de uso | 500 | 2,7% | Médio |
+| 7 | Lambda | Otimizar memória e tempo de execução | 200 | 1,1% | Baixo |
 
-**Total estimado de economia mensal:** **`$9.000`**  
-**Total estimado de economia anual:** **`$108.000`**
+---
 
-Isso ultrapassa a meta de redução de **`$8.550/mês`**, deixando margem para variações de consumo.
+## Análise de risco e pré-requisitos
 
-## Impacto financeiro consolidado
+### 1. EC2 on-demand
+- **Pré-requisitos:** identificar quais cargas são estáveis e podem ser cobertas por reserva sem risco de subutilização.
+- **Risco:** compromisso excessivo em workloads variáveis.
+- **Trade-off:** economia alta, mas exige disciplina de capacidade.
+- **SLA:** baixo risco se aplicada apenas a workloads previsíveis.
 
-- **Custo atual:** `>$28.500/mês`
-- **Custo projetado após otimizações:** `~$19.500/mês`
-- **Economia estimada:** `~$9.000/mês`
-- **Redução percentual:** `~31,6%`
+### 2. RDS PostgreSQL
+- **Pré-requisitos:** revisar CPU, memória, IOPS, storage e necessidade real de Multi-AZ.
+- **Risco:** degradar latência ou disponibilidade se o banco estiver subdimensionado.
+- **Trade-off:** bom retorno, porém precisa validação em janela controlada.
+- **SLA:** manter Multi-AZ se houver criticidade de disponibilidade; qualquer redução estrutural deve ser cautelosa.
 
-## ROI esperado e custo de implementação
+### 3. CloudWatch Logs
+- **Pré-requisitos:** classificar logs por criticidade e retenção necessária.
+- **Risco:** perder histórico útil para troubleshooting.
+- **Trade-off:** economia rápida com baixo risco operacional.
+- **SLA:** praticamente sem impacto direto na aplicação.
 
-### Custo total de implementação
-Estimativa prática para execução em 6 meses:
+### 4. EKS
+- **Pré-requisitos:** mapear clusters sobrepostos e dependências de isolamento.
+- **Risco:** consolidação pode aumentar blast radius e complexidade operacional.
+- **Trade-off:** economia relevante, mas com esforço alto e maior risco.
+- **SLA:** não recomendo como primeiro movimento do trimestre.
 
-- Engenharia/FinOps/DevOps: **`$8.000` a `$15.000`**
-- Ajustes de infraestrutura e testes: **`$3.000` a `$7.000`**
-- Total estimado: **`$11.000` a `$22.000`**
+### 5. NAT Gateway
+- **Pré-requisitos:** entender tráfego inter-regional e egress.
+- **Risco:** alterações de rota podem causar indisponibilidade em serviços dependentes de rede.
+- **Trade-off:** economia moderada com necessidade de análise de tráfego.
+- **SLA:** precisa mudança controlada e validação.
 
-### ROI esperado
-Com economia anual projetada de **`$108.000`**, o ROI é alto mesmo com custo de implementação no topo da faixa.  
-Payback estimado:
+### 6. ElastiCache Redis
+- **Pré-requisitos:** medir hit ratio, memória e throughput.
+- **Risco:** reduzir demais pode piorar latência.
+- **Trade-off:** economia moderada, mas com impacto direto na performance se mal ajustado.
+- **SLA:** só avançar com métricas suficientes.
 
-- **Baixo cenário de custo:** 1 a 2 meses
-- **Cenário conservador:** 2 a 3 meses
+### 7. Lambda
+- **Pré-requisitos:** revisar memória configurada e duração média das funções.
+- **Risco:** baixo.
+- **Trade-off:** ganho pequeno, mas fácil de capturar.
+- **SLA:** baixo impacto.
 
-## Roadmap de implementação
+---
 
-### Mês 1
-- Aplicar Reserved Instances/Savings Plans para EC2 e RDS
-- Ativar Intelligent-Tiering e lifecycle policies no S3
-- Estabelecer baseline de métricas e dashboards
+## Recomendações para atingir a meta de 15%
 
-### Mês 2
-- Migrar workloads de dev/test para Spot Instances
-- Iniciar rightsizing de EC2 com base em CPU/memória reais
-- Revisar autoscaling e schedules de máquinas ociosas
+### Cenário recomendado de implementação
 
-### Mês 3
-- Otimizar Lambda: memória, timeout, cold starts e frequência
-- Ajustar RDS: storage, IOPS e parâmetros de performance
-- Validar impacto em performance e disponibilidade
+Para atingir ou superar a meta sem degradar SLA, recomendo o seguinte pacote mínimo:
 
-### Mês 4
-- Consolidar ganhos e corrigir desvios
-- Rever serviços “outros” e custos invisíveis
-- Padronizar tagging, budgets e alertas
+1. **EC2 on-demand** — economia estimada: **`USD 3.500/mês`**
+2. **RDS PostgreSQL** — economia estimada: **`USD 2.000/mês`**
+3. **CloudWatch Logs** — economia estimada: **`USD 1.000/mês`**
 
-### Mês 5
-- Auditar aderência aos compromissos contratados
-- Refinar recomendações com base no consumo real
-- Repriorizar iniciativas de maior impacto remanescente
+**Total estimado:** **`USD 6.500/mês`**
 
-### Mês 6
-- Fechar ciclo de otimização
-- Medir economia acumulada e ROI
-- Formalizar governança contínua de custos
+Isso representa cerca de **16,0% da conta total**, portanto acima da meta de 15%.
 
-## Análise de riscos
+### O que eu faria em seguida
+- Depois de capturar essas três primeiras alavancas, eu avaliaria:
+  - **NAT Gateway**
+  - **ElastiCache Redis**
+  - **Lambda**
+- Eu deixaria **EKS consolidation** como iniciativa de fase 2, pois o esforço é alto e o risco operacional é maior.
 
-### 1. Reserved Instances / Savings Plans
-- **Risco:** compromisso excessivo e subutilização
-- **Mitigação:** cobrir apenas a carga estável e começar com parcela do consumo
+### Observação importante
+- Os valores acima são **estimativas baseadas apenas no CSV fornecido**.
+- Para fechar a decisão com maior precisão, seria ideal validar:
+  - curva real de uso do EC2 on-demand,
+  - métricas do RDS,
+  - e o valor funcional da retenção de logs de 90 dias.
 
-### 2. Spot Instances
-- **Risco:** interrupção de workloads
-- **Mitigação:** usar apenas em dev/test, batch e tarefas tolerantes a falha
+---
 
-### 3. Rightsizing
-- **Risco:** degradação de performance
-- **Mitigação:** aplicar mudanças gradualmente e monitorar SLOs
+## Conclusão para a diretoria
 
-### 4. S3 Intelligent-Tiering
-- **Risco:** economia menor em objetos altamente acessados
-- **Mitigação:** revisar padrões de acesso antes da migração em massa
-
-### 5. Lambda otimização
-- **Risco:** aumento de latência ou mudança de comportamento
-- **Mitigação:** testar em staging e acompanhar métricas de execução
-
-## Conclusão
-
-A estratégia mais eficiente é atacar primeiro **EC2 e RDS**, onde está a maior parte do gasto, e usar **S3/Lambda** como complemento para consolidar a meta.  
-Com execução disciplinada, a Hill Valley Tech tende a alcançar uma economia de **cerca de 30%** sem comprometer a operação, desde que a implementação seja acompanhada por métricas, testes e governança contínua.  
-A recomendação final é iniciar imediatamente as ações de **baixo esforço e alto impacto** no mês 1, e depois avançar para rightsizing e otimizações estruturais nos meses seguintes.
+A melhor estratégia é capturar economia rápida e segura nos itens de maior peso financeiro, começando por **EC2 on-demand**, **RDS PostgreSQL** e **CloudWatch Logs**.  
+Essas três ações, juntas, já superam a meta de **15%** com risco operacional controlado e sem necessidade de mudanças agressivas em arquitetura.  
+As demais oportunidades devem ser tratadas como uma segunda onda de otimização, após validação de impacto em SLA e desempenho.  
+Em resumo: é possível atingir a meta **sem degradar o SLA**, desde que a execução seja priorizada e acompanhada por métricas.

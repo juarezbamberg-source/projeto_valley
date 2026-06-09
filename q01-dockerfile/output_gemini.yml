@@ -1,37 +1,48 @@
-FROM node:lts-alpine AS builder
+# Estágio 1: Build das dependências
+FROM python:3.11-slim AS builder
 
-# Estágio de construção: instalar dependências e compilar se necessário
+# Define diretório de trabalho
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
+
+# Instala dependências de sistema necessárias para compilação
+RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev && rm -rf /var/lib/apt/lists/*
+
+# Instala dependências Python em uma pasta local
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Estágio 2: Imagem final de produção
+FROM python:3.11-slim
+
+# Define variáveis de ambiente
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DATABASE_URL=""
+ENV API_KEY=""
+
+# Cria usuário não-root para segurança
+RUN groupadd -g 1000 appuser && useradd -u 1000 -g appuser -m appuser
+
+WORKDIR /app
+
+# Copia apenas as dependências instaladas do estágio builder
+COPY --from=builder /root/.local /home/appuser/.local
 COPY . .
 
-# Estágio final: imagem mínima de execução
-FROM node:lts-alpine
+# Ajusta permissões
+RUN chown -R appuser:appuser /app
 
-# Variáveis de ambiente com valores padrão
-ENV NODE_ENV=production \
-    LOG_LEVEL=info
+# Adiciona o caminho das dependências ao PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
 
-# Instalar curl para health check
-RUN apk add --no-cache curl
+# Define usuário não-root
+USER appuser
 
-# Criar usuário não-root 'node' (já existe na imagem oficial)
-USER node
+# Expõe a porta da aplicação
+EXPOSE 8080
 
-# Definir diretório de trabalho
-WORKDIR /app
+# Healthcheck usando Python nativo para evitar dependências externas
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()"
 
-# Copiar dependências e código do estágio de construção (preservar permissões)
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app ./
-
-# Expor porta da aplicação
-EXPOSE 3000
-
-# Health check: verificar se app responde na porta 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl --fail http://localhost:3000/health || exit 1
-
-# Comando de inicialização
-CMD ["node", "index.js"]
+# Comando de inicialização com Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "app:app"]
